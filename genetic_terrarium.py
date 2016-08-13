@@ -4,6 +4,7 @@ import copy
 import operator
 from collections import defaultdict
 
+#This function generates food in a random spot whenever food is consumed by the critter
 def foodGen():
     x = np.random.randint(1,dimension-1)
     y = np.random.randint(1,dimension-1)
@@ -15,14 +16,12 @@ def foodGen():
 
 #Checking all the way left
 def checkLeft(tpos_y, tpos_x):
-    #print tpos_y, tpos_x
     node1 = 0
     node2 = 0
     distance = 0
     for i in range (-tpos_x, 0):
         die = False
         distance += 1
-        #print "LEFT ITERATION: ", i , "IT IS A: ", global_map[tpos_y][-i-1]
         if global_map[tpos_y][-i-1] == 1:
             node1 = 0
             node2 = 1
@@ -103,25 +102,20 @@ def checkDown(tpos_y, tpos_x):
         return node1, node2, -distance
     return node1, node2, distance
 
+#Sets up the coefficients that each move has
 def neuralNet(arr):
-    #Initial node layout
-    # initial1   initial2  distance
-    #         hidden layer
-    #         hidden layer
-    #           output
     initial1 = arr[0]
     initial2 = arr[1]
     distance = arr[2]
     return w1*initial1 + w2*initial2 + w3*(1/distance)
 
-
+#Decides on which move to make given the calculated strength of each move
 def getMove(tpos_y, tpos_x):
     left = neuralNet(checkLeft(tpos_y, tpos_x))
     right = neuralNet(checkRight(tpos_y, tpos_x))
     up = neuralNet(checkUp(tpos_y, tpos_x))
     down = neuralNet(checkDown(tpos_y, tpos_x))
     myMax = max(left, right, up, down)
-    #print left, right, up, down
     amount = ""
     if myMax == left:
         amount += "l"
@@ -131,7 +125,6 @@ def getMove(tpos_y, tpos_x):
         amount += "d"
     elif myMax == up:
         amount += "u"
-    #print amount
     return amount
 
 # ******************* PROGRAM ****************** #
@@ -211,28 +204,22 @@ for i in range (0,64):
 avg = 0
 for i in scoreMap:
     avg += scoreMap[i]
-    #print i,scoreMap[i]
 print "Average for first epoch: ", avg/len(scoreMap)
 
 sorted_x = sorted(scoreMap.items(), key=operator.itemgetter(1))
-#print sorted_x[63]
 counterz = 0
 newCritterMap = defaultdict(list)
 repreductionList = []
 for i in range (-63,-56):
     counterz += 1
-    #print " RANK #", counterz, " is critter : ", sorted_x[-i][0], " with a score of ", sorted_x[-i][1], " and weights of W1: " , critterMap[sorted_x[-i][0]][0][0], " W2: ", critterMap[sorted_x[-i][0]][0][1] , " W3: ", critterMap[sorted_x[-i][0]][0][2]
     repreductionList.append(sorted_x[-i][0])
-#print "REP LIST: ", repreductionList
 
 countChildren = 0
 for q in range (len(repreductionList)):
 
     parentA = repreductionList[q]
-    #print "first parent is: ",repreductionList[q], " with values ",  critterMap[sorted_x[parentA][0]][0][0],  critterMap[sorted_x[parentA][0]][0][1],  critterMap[sorted_x[parentA][0]][0][2]
     for v in repreductionList:
         parentB = v
-        #print "second parent is: ",parentB, " with values ",  critterMap[sorted_x[parentB][0]][0][0],  critterMap[sorted_x[parentB][0]][0][1],  critterMap[sorted_x[parentB][0]][0][2]
         newCritterMap[countChildren].append([critterMap[sorted_x[parentA][0]][0][0],critterMap[sorted_x[parentB][0]][0][1],critterMap[sorted_x[parentA][0]][0][2]])
         countChildren += 1
 
@@ -241,9 +228,8 @@ for q in range (45,64):
     w2 = np.random.uniform(0,1)
     w3 = np.random.uniform(0,1)
     newCritterMap[q].append([w1,w2,w3])
-#print "DONE REP RODUCING. RESULTS: ", newCritterMap
 
-epoches = 100
+epoches = 1000
 for e in range(1,epoches):
     mapData = mg.mapGen(dimension)
 
@@ -266,8 +252,6 @@ for e in range(1,epoches):
         hunger = 0
         while not dead:
             command = getMove(pos_y, pos_x)
-            #print "***** steps: ", moves, "/", max_moves, " ***** hunger: ", hunger, "/",max_hunger, " *****"
-            #print "MOVING: ", command
             moves += 1
             hunger += 1
             if moves == max_moves:
@@ -306,28 +290,22 @@ for e in range(1,epoches):
     avg = 0
     for i in scoreMap:
         avg += scoreMap[i]
-        #print i,scoreMap[i]
     print "Epoch ", e, " average lifespan is : ", avg/len(scoreMap), " steps per critter"
 
     sorted_x = sorted(scoreMap.items(), key=operator.itemgetter(1))
-    #print sorted_x[63]
     counterz = 0
     newCritterMap = defaultdict(list)
     repreductionList = []
     for i in range (-63,-56):
         counterz += 1
-        #print " RANK #", counterz, " is critter : ", sorted_x[-i][0], " with a score of ", sorted_x[-i][1], " and weights of W1: " , critterMap[sorted_x[-i][0]][0][0], " W2: ", critterMap[sorted_x[-i][0]][0][1] , " W3: ", critterMap[sorted_x[-i][0]][0][2]
         repreductionList.append(sorted_x[-i][0])
-    #print "REP LIST: ", repreductionList
 
     countChildren = 0
     for q in range (len(repreductionList)):
 
         parentA = repreductionList[q]
-        #print "first parent is: ",repreductionList[q], " with values ",  critterMap[sorted_x[parentA][0]][0][0],  critterMap[sorted_x[parentA][0]][0][1],  critterMap[sorted_x[parentA][0]][0][2]
         for v in repreductionList:
             parentB = v
-            #print "second parent is: ",parentB, " with values ",  critterMap[sorted_x[parentB][0]][0][0],  critterMap[sorted_x[parentB][0]][0][1],  critterMap[sorted_x[parentB][0]][0][2]
             newCritterMap[countChildren].append([critterMap[sorted_x[parentA][0]][0][0],critterMap[sorted_x[parentB][0]][0][1],critterMap[sorted_x[parentA][0]][0][2]])
             countChildren += 1
 
